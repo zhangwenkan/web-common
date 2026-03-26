@@ -1,0 +1,53 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Pre-commit 钩子：阻止提交本地工具文件并在提交前运行检查
+
+echo "开始代码检查..."
+
+# 获取暂存的文件列表
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM)
+if [ -z "$STAGED_FILES" ]; then
+    echo "没有暂存的文件，跳过检查"
+    exit 0
+fi
+
+# 阻止提交本地工具文件
+if printf '%s\n' "$STAGED_FILES" | grep -E '(^|/)\.claude(/|$)|(^|/)\.eslintcache$' >/dev/null; then
+    echo ""
+    echo "禁止提交本地工具文件:"
+    printf '%s\n' "$STAGED_FILES" | grep -E '(^|/)\.claude(/|$)|(^|/)\.eslintcache$'
+    echo ""
+    echo "请将这些文件从暂存区移除后再提交，例如:"
+    echo "  git restore --staged .eslintcache"
+    echo "  git restore --staged .claude"
+    exit 1
+fi
+
+echo "检查文件:"
+echo "$STAGED_FILES"
+echo ""
+
+# 运行 lint-staged 并捕获结果
+if pnpm run lint:staged; then
+    echo "代码检查通过"
+    exit 0
+else
+    echo ""
+    echo "代码检查失败，提交被阻止"
+    echo ""
+    echo "修复建议:"
+    echo "  1. 运行以下命令修复问题:"
+    echo "     pnpm run lint:fix"
+    echo ""
+    echo "  2. 或者分别运行:"
+    echo "     pnpm run lint:fix:eslint    # ESLint 修复"
+    echo "     pnpm run lint:fix:prettier  # Prettier 格式化"
+    echo "     pnpm run lint:fix:stylelint # Stylelint 修复"
+    echo ""
+    echo "  3. 修复后重新提交:"
+    echo "     git add <需要提交的文件>"
+    echo "     git commit -m \"你的提交信息\""
+    echo ""
+    exit 1
+fi

@@ -1,0 +1,26 @@
+/**
+ * 全局 SCSS 工具函数文件
+ *
+ * 功能说明：
+ * - 此文件中的混入（mixin）和函数会自动注入到所有组件样式中
+ * - 无需在每个组件中手动 @import
+ * - 由 vite.config.mjs 中的 scss.additionalData 配置自动注入
+ *
+ * 使用示例：
+ * // 定义混入
+ * @mixin flex-center {
+ *   display: flex;
+ *   align-items: center;
+ *   justify-content: center;
+ * }
+ *
+ * // 组件中使用
+ * .container {
+ *   @include flex-center;
+ * }
+ *
+ * 建议内容：
+ * - 常用混入（flex 布局、文本省略等）
+ * - 工具函数（px 转 rem、颜色处理等）
+ * - 响应式断点处理
+ */

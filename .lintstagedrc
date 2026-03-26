@@ -1,0 +1,7 @@
+{
+	"*.{js,mjs,cjs,jsx,ts,tsx}": ["eslint --fix --max-warnings 0", "prettier --write"],
+	"{!(package)*.json,*.code-snippets,.!(browserslist)*rc}": ["prettier --write --parser json"],
+	"*.vue": ["eslint --fix --max-warnings 0", "prettier --write", "stylelint --fix --allow-empty-input"],
+	"*.{scss,less,styl,html}": ["stylelint --fix --allow-empty-input", "prettier --write"],
+	"*.md": ["prettier --write"]
+}

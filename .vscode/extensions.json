@@ -1,0 +1,13 @@
+{
+   "recommendations": [
+      "esbenp.prettier-vscode",           // Prettier 代码格式化
+      "dbaeumer.vscode-eslint",           // ESLint 集成
+      "stylelint.vscode-stylelint",       // Stylelint 集成
+      "vue.volar",                        // Vue 3 支持
+      "vue.vscode-typescript-vue-plugin", // TypeScript Vue 支持
+      "bradlc.vscode-tailwindcss",        // Tailwind CSS 智能提示
+      "formulahendry.auto-rename-tag",    // 自动重命名标签
+      "christian-kohler.path-intellisense", // 路径智能提示
+      "usernamehw.errorlens"              // 错误高亮显示
+   ]
+}

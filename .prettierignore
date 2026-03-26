@@ -1,0 +1,59 @@
+# 依赖目录
+node_modules/
+pnpm-lock.yaml
+
+# 构建输出
+dist/
+build/
+
+# 日志文件
+*.log
+
+# 缓存目录
+.cache/
+.vite/
+
+# 环境文件
+.env
+.env.local
+.env.*.local
+
+# 包管理器文件
+package-lock.json
+yarn.lock
+
+# 图片和资源
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.svg
+*.ico
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# 文档
+*.md
+
+# 其他
+.DS_Store
+Thumbs.dbnode_modules
+dist
+
+*.woff
+*.ttf
+*.md
+
+.vscode
+.idea
+
+.husky
+public
+.npmrc
+
+Dockerfile
+
+types/auto-imports.d.ts
+types/components.d.ts

@@ -1,0 +1,25 @@
+.idea
+node_modules
+dist
+package-lock.json
+
+# caches
+.eslintcache
+coverage
+*.log
+
+# system
+.DS_Store
+Thumbs.db
+
+# local tools
+.claude
+.arts
+
+# generated types
+types/auto-imports.d.ts
+types/components.d.ts
+public/version.json
+
+# local docs
+docs

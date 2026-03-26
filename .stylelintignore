@@ -1,0 +1,14 @@
+﻿node_modules
+dist
+
+.vscode
+.idea
+
+.husky
+build
+public
+src/api
+src/composables
+src/router
+src/store
+types

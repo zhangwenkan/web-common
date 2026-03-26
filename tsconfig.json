@@ -1,0 +1,31 @@
+{
+	"compilerOptions": {
+		"target": "esnext",
+		"module": "esnext",
+		"moduleResolution": "bundler",
+		"strict": true,
+		"forceConsistentCasingInFileNames": true,
+		"allowSyntheticDefaultImports": true,
+		"jsx": "preserve",
+		"sourceMap": true,
+		"esModuleInterop": true,
+		"resolveJsonModule": true,
+		"noUnusedLocals": true,
+		"noUnusedParameters": true,
+		"experimentalDecorators": true,
+		"lib": ["dom", "esnext"],
+		"noImplicitAny": false,
+		"skipLibCheck": true,
+		"types": ["vite/client", "node"],
+		"removeComments": true,
+		"baseUrl": ".",
+		"paths": {
+			"@/*": ["src/*"],
+			"#/*": ["types/*"]
+		},
+		"rootDirs": [],
+		"typeRoots": ["./types", "./node_modules/@types/"]
+	},
+	"include": ["src/**/*.ts", "src/**/*.d.ts", "src/**/*.tsx", "src/**/*.vue", "types/**/*.d.ts", "types/**/*.ts", "mock/**/*.ts", "vite/**/*.ts", "vite.config.ts", "vite.config.mjs"],
+	"exclude": ["node_modules", "dist", "**/*.js"]
+}

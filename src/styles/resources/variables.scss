@@ -1,0 +1,24 @@
+/**
+ * 全局 SCSS 变量文件
+ *
+ * 功能说明：
+ * - 此文件中的变量会自动注入到所有组件样式中
+ * - 无需在每个组件中手动 @import
+ * - 由 vite.config.mjs 中的 scss.additionalData 配置自动注入
+ *
+ * 使用示例：
+ * // 定义变量
+ * $primary-color: #409eff;
+ * $border-radius: 4px;
+ *
+ * // 组件中直接使用
+ * .button {
+ *   background: $primary-color;
+ *   border-radius: $border-radius;
+ * }
+ *
+ * 注意：
+ * - 文件位于 src/styles/resources/ 目录下
+ * - 该目录下所有 .scss 文件都会被自动注入
+ * - 建议按功能分类（变量、混入、函数等）
+ */
