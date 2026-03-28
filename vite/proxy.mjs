@@ -43,7 +43,7 @@ export function createProxy(list = [], VITE_OPEN_PROXY) {
 			changeOrigin: VITE_OPEN_PROXY, // 是否修改请求头中的 Origin，解决跨域问题
 			// 路径重写规则：移除前缀，将请求转发到目标服务器
 			// 例如：/api/user -> /user
-			rewrite: (path) => path.replace(new RegExp(`^${prefix}`), ''),
+			// rewrite: (path) => path.replace(new RegExp(`^${prefix}`), ''),
 			// HTTPS 目标地址需要设置 secure: false 以忽略证书验证
 			...(isHttps ? { secure: false } : {}),
 		};
