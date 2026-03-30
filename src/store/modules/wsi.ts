@@ -27,11 +27,19 @@ interface WsiState {
 	};
 	// 瓦片查询参数
 	tileParams: TileParams;
+	// 扫描倍率
+	scanMagnification: number;
+	// 当前显示倍率
+	currentMagnification: number;
+	// 最大允许倍率
+	maxMagnification: number;
+	// 全图完整显示对应倍率
+	fitMagnification: number;
 }
 
 export const useWsiStore = defineStore('wsi', {
 	state: (): WsiState => ({
-		slideId: '',
+		slideId: '01KMCRDD4RG9E6JMA6R4X0SCXJ1',
 		dziParams: {
 			cname: 'AI',
 		},
@@ -47,6 +55,10 @@ export const useWsiStore = defineStore('wsi', {
 			hue: 0,
 			saturation: 1,
 		},
+		scanMagnification: 40,
+		currentMagnification: 1,
+		maxMagnification: 160,
+		fitMagnification: 1,
 	}),
 
 	getters: {
@@ -56,6 +68,8 @@ export const useWsiStore = defineStore('wsi', {
 				.map(([key, value]) => `${key}=${value}`)
 				.join('&');
 		},
+		// 是否超过扫描倍率
+		isOverScanMagnification: (state) => state.currentMagnification > state.scanMagnification,
 	},
 
 	actions: {
@@ -96,6 +110,35 @@ export const useWsiStore = defineStore('wsi', {
 				hue: 0,
 				saturation: 1,
 			};
+		},
+
+		/**
+		 * 设置扫描倍率
+		 */
+		setScanMagnification(magnification: number) {
+			this.scanMagnification = magnification;
+			this.maxMagnification = magnification * 4;
+		},
+
+		/**
+		 * 设置当前倍率
+		 */
+		setCurrentMagnification(magnification: number) {
+			this.currentMagnification = magnification;
+		},
+
+		/**
+		 * 设置最大允许倍率
+		 */
+		setMaxMagnification(magnification: number) {
+			this.maxMagnification = magnification;
+		},
+
+		/**
+		 * 设置全图完整显示对应倍率
+		 */
+		setFitMagnification(magnification: number) {
+			this.fitMagnification = magnification;
 		},
 	},
 });

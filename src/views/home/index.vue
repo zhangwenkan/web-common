@@ -1,173 +1,106 @@
 <template>
-	<div ref="viewerRef" class="w-full h-screen"></div>
+	<div class="relative h-screen w-full bg-white">
+		<div ref="viewerRef" class="h-full w-full"></div>
+
+		<ViewerZoomRuler
+			:current-magnification-label="currentMagnificationLabel"
+			:is-warning="isWarning"
+			:is-fit-active="isFitActive"
+			:preset-magnifications="OSD_MAGNIFICATION_PRESETS"
+			:is-preset-disabled="isPresetDisabled"
+			:is-preset-active="isPresetActive"
+			@select-magnification="zoomToMagnification"
+			@fit-to-viewport="fitToViewport"
+		/>
+	</div>
 </template>
 
 <script setup lang="ts" name="Home">
-	import OpenSeadragon, { type Viewer, clearTileCache, fetchTile } from '@/utils/openseadragon';
-	import { onBeforeUnmount, onMounted, useTemplateRef } from 'vue';
-	import { getDziMetadata } from '@/api/modules/wsi';
-	import { useWsiStore } from '@/store/modules/wsi';
+	import OpenSeadragon, { type Viewer, clearTileCache } from '@/utils/openseadragon';
+	import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
 	import {
 		OSD_DEFAULT_OPTIONS,
-		OSD_MAX_IMAGE_CACHE_COUNT,
 		OSD_IMAGE_LOADER_LIMIT,
+		OSD_MAGNIFICATION_PRESETS,
+		OSD_MAX_IMAGE_CACHE_COUNT,
 		OSD_TILE_LOAD_TIMEOUT,
 	} from '@/config/openseadragon';
+	import { useWsiStore } from '@/store/modules/wsi';
+	import { storeToRefs } from 'pinia';
+	import ViewerZoomRuler from '@/components/ViewerZoomRuler/index.vue';
+	import { useViewerMagnification } from '@/composables/useViewerMagnification';
+	import { useViewerShortcuts } from '@/composables/useViewerShortcuts';
 
-	const wsiStore = useWsiStore();
+	const DEMO_DZI_URL = 'https://openseadragon.github.io/example-images/highsmith/highsmith.dzi';
 	const viewerRef = useTemplateRef('viewerRef');
-	let viewer: Viewer | null = null;
+	const viewer = ref<Viewer | null>(null);
+	const wsiStore = useWsiStore();
+	const wsiStoreRefs = storeToRefs(wsiStore);
+	const API_DZI_URL = wsiStore.slideId
+		? `/wsi/api/dzi/${wsiStore.slideId}.dzi?cname=${encodeURIComponent(wsiStore.dziParams.cname)}`
+		: null;
+	const DZI_SOURCES = {
+		api: API_DZI_URL,
+		demo: DEMO_DZI_URL,
+	} as const;
+	const ACTIVE_DZI_SOURCE: keyof typeof DZI_SOURCES = 'api';
+	const ACTIVE_DZI_URL = DZI_SOURCES[ACTIVE_DZI_SOURCE] ?? DZI_SOURCES.demo;
 
-	// 解析 DZI XML
-	function parseDziXml(text: string) {
-		const parser = new DOMParser();
-		const xml = parser.parseFromString(text, 'application/xml');
+	const {
+		currentMagnificationLabel,
+		isWarning,
+		isFitActive,
+		handleViewerOpen,
+		handleViewerZoom,
+		handleViewerAnimation,
+		handleCanvasScroll,
+		handleAnimationFinish,
+		handleViewportResize,
+		zoomToMagnification,
+		fitToViewport,
+		isPresetDisabled,
+		isPresetActive,
+	} = useViewerMagnification(viewer, wsiStore, wsiStoreRefs);
 
-		const imageElement = xml.getElementsByTagName('Image')[0];
-		const sizeElement = xml.getElementsByTagName('Size')[0];
+	useViewerShortcuts({
+		onSelectMagnification: zoomToMagnification,
+		onFitToViewport: fitToViewport,
+	});
 
-		if (!imageElement || !sizeElement) {
-			throw new Error('DZI XML 格式无效，缺少 Image 或 Size 节点');
-		}
-
-		const width = parseInt(sizeElement.getAttribute('Width') || '0', 10);
-		const height = parseInt(sizeElement.getAttribute('Height') || '0', 10);
-		if (!width || !height) {
-			throw new Error('DZI XML 中图像尺寸为 0，数据异常');
-		}
-
-		return {
-			tileSize: parseInt(imageElement.getAttribute('TileSize') || '256', 10),
-			overlap: parseInt(imageElement.getAttribute('Overlap') || '0', 10),
-			format: imageElement.getAttribute('Format') || 'jpg',
-			width,
-			height,
-		};
-	}
-
-	// 构建瓦片原始 URL
-	function buildTileUrl(level: number, x: number, y: number, format: string) {
-		return `/wsi/api/dzi/${wsiStore.slideId}_files/${level}/${x}_${y}.${format}?${wsiStore.tileQueryString}`;
-	}
-
-	interface TileDownloadContext {
-		src: string;
-		finish: (data: HTMLImageElement | null, request?: unknown, errorMessage?: string) => void;
-		userData: {
-			aborted?: boolean;
-			image?: HTMLImageElement;
-		};
-	}
-
-	async function downloadTileWithCache(context: TileDownloadContext) {
-		try {
-			const objectUrl = await fetchTile(context.src);
-			if (context.userData.aborted) {
-				context.finish(null, undefined, 'Tile load aborted');
-				return;
-			}
-
-			const image = new Image();
-			context.userData.image = image;
-
-			image.onload = () => {
-				image.onload = null;
-				image.onerror = null;
-				context.finish(image);
-			};
-
-			image.onerror = () => {
-				image.onload = null;
-				image.onerror = null;
-				context.finish(null, undefined, `Tile image decode failed: ${context.src}`);
-			};
-
-			image.src = objectUrl;
-		} catch (error) {
-			const message = error instanceof Error ? error.message : `Tile load failed: ${context.src}`;
-			context.finish(null, undefined, message);
-		}
-	}
-
-	function abortTileDownload(context: TileDownloadContext) {
-		context.userData.aborted = true;
-		if (context.userData.image) {
-			context.userData.image.onload = null;
-			context.userData.image.onerror = null;
-		}
-	}
-
-	onMounted(async () => {
+	onMounted(() => {
 		if (!viewerRef.value) {
 			console.error('[OSD] 查看器容器元素未找到，无法初始化');
 			return;
 		}
 
-		// 设置测试用的切片 ID
-		wsiStore.setSlideId('01KMCRDD4RG9E6JMA6R4X0SCXJ1');
+		viewer.value = OpenSeadragon({
+			...OSD_DEFAULT_OPTIONS,
+			element: viewerRef.value,
+			maxImageCacheCount: OSD_MAX_IMAGE_CACHE_COUNT,
+			imageLoaderLimit: OSD_IMAGE_LOADER_LIMIT,
+			timeout: OSD_TILE_LOAD_TIMEOUT,
+			tileSources: ACTIVE_DZI_URL,
+		});
 
-		try {
-			console.log('[OSD] 正在获取 DZI 元数据...');
-			const response = await getDziMetadata(wsiStore.slideId, wsiStore.dziParams);
-			const text = response as unknown as string;
+		viewer.value.addHandler('open', handleViewerOpen);
+		viewer.value.addHandler('zoom', handleViewerZoom);
+		viewer.value.addHandler('animation', handleViewerAnimation);
+		viewer.value.addHandler('canvas-scroll', handleCanvasScroll);
+		viewer.value.addHandler('animation-finish', handleAnimationFinish);
+		viewer.value.addHandler('open-failed', (event: unknown) => {
+			console.error('[OSD] 演示 DZI 图像打开失败：', event);
+		});
+		viewer.value.addHandler('tile-load-failed', (event: unknown) => {
+			console.warn('[OSD] 演示 DZI 瓦片加载失败：', event);
+		});
 
-			if (!text || !text.trim()) {
-				throw new Error('DZI 元数据接口返回内容为空');
-			}
-
-			const dzi = parseDziXml(text);
-			console.log('[OSD] DZI 元数据解析成功：', dzi);
-
-			viewer = OpenSeadragon({
-				...OSD_DEFAULT_OPTIONS,
-				element: viewerRef.value,
-				maxImageCacheCount: OSD_MAX_IMAGE_CACHE_COUNT,
-				imageLoaderLimit: OSD_IMAGE_LOADER_LIMIT,
-				timeout: OSD_TILE_LOAD_TIMEOUT,
-				tileSources: {
-					width: dzi.width,
-					height: dzi.height,
-					tileSize: dzi.tileSize,
-					tileOverlap: dzi.overlap,
-					getTileUrl: (level: number, x: number, y: number) => {
-						return buildTileUrl(level, x, y, dzi.format);
-					},
-					downloadTileStart: (context: TileDownloadContext) => {
-						void downloadTileWithCache(context);
-					},
-					downloadTileAbort: (context: TileDownloadContext) => {
-						abortTileDownload(context);
-					},
-				},
-			});
-
-			viewer.addHandler('open', () => {
-				console.log('[OSD] 图像加载成功，查看器已就绪');
-			});
-
-			viewer.addHandler('open-failed', (event: unknown) => {
-				console.error('[OSD] 图像打开失败，请检查瓦片源配置或网络连接：', event);
-			});
-
-			viewer.addHandler('tile-load-failed', (event: unknown) => {
-				console.warn('[OSD] 瓦片加载失败，OSD 将自动重试：', event);
-			});
-
-			viewer.addHandler('tile-loaded', () => {
-				// 静默处理，避免高频打印干扰控制台
-			});
-		} catch (error) {
-			if (error instanceof Error) {
-				console.error('[OSD] 初始化失败：', error.message);
-			} else {
-				console.error('[OSD] 初始化失败，未知错误：', error);
-			}
-		}
+		window.addEventListener('resize', handleViewportResize);
 	});
 
 	onBeforeUnmount(() => {
-		viewer?.destroy();
-		viewer = null;
+		window.removeEventListener('resize', handleViewportResize);
+		viewer.value?.destroy();
+		viewer.value = null;
 		clearTileCache();
 	});
 </script>
