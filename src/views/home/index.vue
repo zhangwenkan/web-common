@@ -30,6 +30,7 @@
 	import ViewerZoomRuler from '@/components/ViewerZoomRuler/index.vue';
 	import { useViewerMagnification } from '@/composables/useViewerMagnification';
 	import { useViewerShortcuts } from '@/composables/useViewerShortcuts';
+	import { useViewerNavigator } from '@/composables/useViewerNavigator';
 
 	const DEMO_DZI_URL = 'https://openseadragon.github.io/example-images/highsmith/highsmith.dzi';
 	const viewerRef = useTemplateRef('viewerRef');
@@ -61,6 +62,21 @@
 		isPresetDisabled,
 		isPresetActive,
 	} = useViewerMagnification(viewer, wsiStore, wsiStoreRefs);
+	const {
+		handleViewerOpen: handleNavigatorOpen,
+		handleViewportResize: handleNavigatorResize,
+		destroyNavigatorEnhancements,
+	} = useViewerNavigator(viewer);
+
+	function handleViewerOpened() {
+		handleViewerOpen();
+		handleNavigatorOpen();
+	}
+
+	function handleWindowResize() {
+		handleViewportResize();
+		handleNavigatorResize();
+	}
 
 	useViewerShortcuts({
 		onSelectMagnification: zoomToMagnification,
@@ -82,7 +98,7 @@
 			tileSources: ACTIVE_DZI_URL,
 		});
 
-		viewer.value.addHandler('open', handleViewerOpen);
+		viewer.value.addHandler('open', handleViewerOpened);
 		viewer.value.addHandler('zoom', handleViewerZoom);
 		viewer.value.addHandler('animation', handleViewerAnimation);
 		viewer.value.addHandler('canvas-scroll', handleCanvasScroll);
@@ -94,11 +110,12 @@
 			console.warn('[OSD] 演示 DZI 瓦片加载失败：', event);
 		});
 
-		window.addEventListener('resize', handleViewportResize);
+		window.addEventListener('resize', handleWindowResize);
 	});
 
 	onBeforeUnmount(() => {
-		window.removeEventListener('resize', handleViewportResize);
+		window.removeEventListener('resize', handleWindowResize);
+		destroyNavigatorEnhancements();
 		viewer.value?.destroy();
 		viewer.value = null;
 		clearTileCache();

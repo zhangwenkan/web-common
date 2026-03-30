@@ -1,6 +1,5 @@
 import { computed, type Ref } from 'vue';
 import type { Viewer } from '@/utils/openseadragon';
-import type { StoreToRefs } from 'pinia';
 import type { useWsiStore } from '@/store/modules/wsi';
 import { OSD_MAGNIFICATION_TOLERANCE, OSD_MIN_ZOOM_IMAGE_RATIO, OSD_ZOOM_ANIMATION } from '@/config/openseadragon';
 
@@ -15,10 +14,17 @@ interface ViewerCanvasScrollEvent {
 	preventDefaultAction: boolean;
 }
 
+interface WsiStoreRefs {
+	scanMagnification: Ref<number>;
+	currentMagnification: Ref<number>;
+	maxMagnification: Ref<number>;
+	fitMagnification: Ref<number>;
+}
+
 export function useViewerMagnification(
 	viewer: Ref<Viewer | null>,
 	wsiStore: ReturnType<typeof useWsiStore>,
-	wsiStoreRefs: StoreToRefs<ReturnType<typeof useWsiStore>>
+	wsiStoreRefs: WsiStoreRefs
 ) {
 	const { scanMagnification, currentMagnification, maxMagnification, fitMagnification } = wsiStoreRefs;
 	let isApplyingClampedZoom = false;

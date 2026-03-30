@@ -5,6 +5,9 @@
  */
 import { defineStore } from 'pinia';
 
+const MAX_MAGNIFICATION_RATIO = 4;
+const DEFAULT_SCAN_MAGNIFICATION = 20;
+
 interface TileParams {
 	brightness: number;
 	contrast: number;
@@ -55,9 +58,9 @@ export const useWsiStore = defineStore('wsi', {
 			hue: 0,
 			saturation: 1,
 		},
-		scanMagnification: 40,
+		scanMagnification: DEFAULT_SCAN_MAGNIFICATION,
 		currentMagnification: 1,
-		maxMagnification: 160,
+		maxMagnification: DEFAULT_SCAN_MAGNIFICATION * MAX_MAGNIFICATION_RATIO,
 		fitMagnification: 1,
 	}),
 
@@ -117,7 +120,7 @@ export const useWsiStore = defineStore('wsi', {
 		 */
 		setScanMagnification(magnification: number) {
 			this.scanMagnification = magnification;
-			this.maxMagnification = magnification * 4;
+			this.maxMagnification = magnification * MAX_MAGNIFICATION_RATIO;
 		},
 
 		/**

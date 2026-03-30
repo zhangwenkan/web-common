@@ -76,7 +76,18 @@ export const OSD_DEFAULT_OPTIONS = {
 	},
 	// 默认显示导航缩略图
 	showNavigator: true,
-	navigatorPosition: 'TOP_LEFT' as const,
+	navigatorAutoFade: false,
+	navigatorPosition: 'ABSOLUTE' as const,
+	navigatorLeft: '20px',
+	navigatorTop: '20px',
+	navigatorWidth: '150px',
+	navigatorHeight: '150px',
+	navigatorBackground: '#ffffff',
+	navigatorBorderColor: '#25b0e5',
+	navigatorDisplayRegionColor: '#ff0000',
+	navigatorAutoResize: false,
+	navigatorMaintainSizeRatio: true,
+	navigatorMinPixelRatio: 0.2,
 	// 隐藏默认控件
 	showZoomControl: false,
 	showHomeControl: false,
@@ -106,6 +117,21 @@ export const OSD_MIN_ZOOM_IMAGE_RATIO = 0.1;
 
 export const OSD_ZOOM_ANIMATION = {
 	clampImmediate: true,
+} as const;
+
+export const OSD_NAVIGATOR_STYLE = {
+	top: 20,
+	left: 20,
+	maxEdge: 150,
+	borderRadius: 4,
+	boxShadow: '0 8px 24px rgba(15, 23, 42, 0.18)',
+	borderColor: '#25b0e5',
+	backgroundColor: '#ffffff',
+	displayRegionColor: '#ff0000',
+	displayRegionFill: 'rgba(255, 255, 255, 0.18)',
+	displayRegionBorderWidth: 1,
+	crosshairColor: '#ff0000',
+	crosshairWidth: 1,
 } as const;
 
 /** 瓦片源默认参数 */
