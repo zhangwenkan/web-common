@@ -3,8 +3,8 @@
 	<div class="error-container">
 		<div class="error-content">
 			<h1>404</h1>
-			<p>{{ $t('error.notFound') }}</p>
-			<el-button type="primary" @click="goHome">{{ $t('error.backHome') }}</el-button>
+			<p>页面不存在</p>
+			<el-button type="primary" @click="goHome">返回首页</el-button>
 		</div>
 	</div>
 </template>

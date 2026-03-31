@@ -1,13 +1,12 @@
 # Web Wsi
 
-一个偏轻量的 Vue 3 + Vite 基础脚手架，内置路由、Pinia、国际化、Element Plus、SVG 图标、Mock、Lint 规范和基础构建优化，适合作为中后台或通用 Web 项目的起点。
+一个偏轻量的 Vue 3 + Vite 基础脚手架，内置路由、Pinia、Element Plus、SVG 图标、Mock、Lint 规范和基础构建优化，适合作为中后台或通用 Web 项目的起点。
 
 ## 特性概览
 
 - Vue 3 + Vite 8 + TypeScript
 - Pinia 状态管理
 - Vue Router 路由基础结构
-- Vue I18n 国际化
 - Element Plus 组件库
 - SVG Sprite 图标方案
 - Mock 数据能力
@@ -67,7 +66,6 @@ src/
 ├── api/            # 请求封装与接口类型
 ├── components/     # 通用组件
 ├── layouts/        # 布局组件
-├── locales/        # 国际化资源
 ├── router/         # 路由配置
 ├── store/          # Pinia store
 ├── styles/         # 全局样式与主题

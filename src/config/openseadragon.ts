@@ -14,7 +14,7 @@ export interface OsdMagnificationPreset {
 /** 查看器默认参数 */
 export const OSD_DEFAULT_OPTIONS = {
 	// 动画时长（秒）
-	animationTime: 0.8,
+	animationTime: 0.3,
 	// 最大缩放像素比
 	maxZoomPixelRatio: 2,
 	// 最小缩放级别
@@ -98,7 +98,7 @@ export const OSD_DEFAULT_OPTIONS = {
 	// 按钮点击缩放倍率
 	zoomPerClick: 1.0,
 	// 惯性拖动（弹动效果），关闭后移动更直接
-	springStiffness: 6,
+	springStiffness: 5.5,
 };
 
 export const OSD_MAGNIFICATION_PRESETS: readonly OsdMagnificationPreset[] = [
@@ -144,7 +144,7 @@ export const OSD_TILE_SOURCE_DEFAULTS = {
 export const OSD_MAX_IMAGE_CACHE_COUNT = 200;
 
 /** 同时进行的瓦片下载线程数上限 */
-export const OSD_IMAGE_LOADER_LIMIT = 6;
+export const OSD_IMAGE_LOADER_LIMIT = 4;
 
 /** 瓦片加载超时（毫秒） */
 export const OSD_TILE_LOAD_TIMEOUT = 15000;

@@ -3,11 +3,10 @@
  *
  * 功能说明：
  * 1. 创建 Vue 应用实例
- * 2. 注册全局插件（路由、状态管理、国际化）
+ * 2. 注册全局插件（路由、状态管理）
  * 3. 导入全局样式和 SVG 图标
  * 4. 挂载应用到 DOM
  */
-import i18n from '@/locales';
 import router from '@/router';
 import pinia from '@/store';
 import { createApp } from 'vue';
@@ -28,9 +27,6 @@ app.use(router);
 
 // 注册状态管理插件（Pinia）
 app.use(pinia);
-
-// 注册国际化插件
-app.use(i18n);
 
 // 挂载应用到 #app 元素
 app.mount('#app');

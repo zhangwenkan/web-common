@@ -8,7 +8,7 @@ import { defineStore } from 'pinia';
 const MAX_MAGNIFICATION_RATIO = 4;
 const DEFAULT_SCAN_MAGNIFICATION = 20;
 
-interface TileParams {
+export interface TileParams {
 	brightness: number;
 	contrast: number;
 	gamma: number;
@@ -20,6 +20,19 @@ interface TileParams {
 	hue: number;
 	saturation: number;
 }
+
+export const DEFAULT_TILE_PARAMS: TileParams = {
+	brightness: 0,
+	contrast: 1,
+	gamma: 1,
+	sharpen: 0,
+	redGain: 1,
+	greenGain: 1,
+	blueGain: 1,
+	colorStyle: 0,
+	hue: 0,
+	saturation: 1,
+};
 
 interface WsiState {
 	// 当前切片文件 ID
@@ -46,18 +59,7 @@ export const useWsiStore = defineStore('wsi', {
 		dziParams: {
 			cname: 'AI',
 		},
-		tileParams: {
-			brightness: 0,
-			contrast: 1,
-			gamma: 1,
-			sharpen: 0,
-			redGain: 1,
-			greenGain: 1,
-			blueGain: 1,
-			colorStyle: 0,
-			hue: 0,
-			saturation: 1,
-		},
+		tileParams: { ...DEFAULT_TILE_PARAMS },
 		scanMagnification: DEFAULT_SCAN_MAGNIFICATION,
 		currentMagnification: 1,
 		maxMagnification: DEFAULT_SCAN_MAGNIFICATION * MAX_MAGNIFICATION_RATIO,
@@ -101,18 +103,7 @@ export const useWsiStore = defineStore('wsi', {
 		 * 重置瓦片参数为默认值
 		 */
 		resetTileParams() {
-			this.tileParams = {
-				brightness: 0,
-				contrast: 1,
-				gamma: 1,
-				sharpen: 0,
-				redGain: 1,
-				greenGain: 1,
-				blueGain: 1,
-				colorStyle: 0,
-				hue: 0,
-				saturation: 1,
-			};
+			this.tileParams = { ...DEFAULT_TILE_PARAMS };
 		},
 
 		/**

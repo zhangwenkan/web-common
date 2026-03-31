@@ -118,7 +118,7 @@ function createVisualizer(isBuild) {
 function createAutoImport() {
 	return autoImport({
 		// 预设自动导入的库
-		imports: ['vue', 'vue-router', 'pinia', 'vue-i18n'],
+		imports: ['vue', 'vue-router', 'pinia'],
 		// Element Plus 组件自动导入解析器
 		resolvers: [ElementPlusResolver()],
 		// 类型声明文件输出路径

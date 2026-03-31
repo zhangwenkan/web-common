@@ -131,7 +131,7 @@ export default async ({ mode, command }) => {
 
 		// 依赖预构建配置
 		optimizeDeps: {
-			include: ['vue', 'vue-router', 'pinia', 'axios', 'element-plus', 'vue-i18n'],
+			include: ['vue', 'vue-router', 'pinia', 'axios', 'element-plus'],
 			exclude: ['@iconify/json'], // 排除大型 JSON 文件
 		},
 
