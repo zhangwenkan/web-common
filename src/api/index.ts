@@ -59,7 +59,8 @@ class RequestHttp {
 				tryHideFullScreenLoading();
 
 				// 全局错误信息拦截（静默请求不弹出错误）
-				if (data.code && data.code !== ResultEnum.SUCCESS && !config.silent) {
+				const responseCode = data?.code == null ? null : String(data.code);
+				if (responseCode !== null && responseCode !== String(ResultEnum.SUCCESS) && !config.silent) {
 					ElMessage.error(data.message);
 					return Promise.reject(data);
 				}

@@ -2,6 +2,90 @@
 	<div class="relative h-screen w-full bg-white">
 		<div ref="viewerRef" class="h-full w-full"></div>
 
+		<div class="viewer-toolbar-root absolute top-4 right-4 z-20 flex items-start gap-4">
+			<transition name="viewer-image-adjust-fade">
+				<button
+					v-if="slideInfo.panel.hasMoved.value"
+					type="button"
+					class="mt-[14px] mr-[14px] flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(40,49,66,0.3)] text-white shadow-[0_8px_20px_rgba(15,23,42,0.25)] transition hover:bg-[rgba(40,49,66,0.8)]"
+					title="复位弹窗位置"
+					@click="slideInfo.actions.resetPosition"
+				>
+					↺
+				</button>
+			</transition>
+
+			<button
+				type="button"
+				class="flex h-[46px] max-w-[420px] items-center gap-3 rounded-full bg-[rgba(40,49,66,0.6)] px-[18px] text-left text-white shadow-[0_8px_20px_rgba(15,23,42,0.35)] backdrop-blur transition hover:bg-[rgba(40,49,66,0.78)]"
+				title="切片信息(I)"
+				@click="handleSlideInfoToggle"
+			>
+				<div class="min-w-0 text-sm leading-none font-medium">
+					<span class="block truncate">{{ slideInfo.summary.title.value }}</span>
+				</div>
+				<span
+					v-if="slideInfo.summary.badgeText.value"
+					class="shrink-0 rounded-full px-[10px] py-[4px] text-xs leading-none"
+					:style="{
+						color: slideInfo.summary.badgeColor.value,
+						backgroundColor: slideInfo.summary.badgeBackgroundColor.value,
+					}"
+				>
+					{{ slideInfo.summary.badgeText.value }}
+				</span>
+			</button>
+
+			<div class="relative">
+				<button
+					type="button"
+					class="flex h-[46px] w-[46px] items-center justify-center rounded-full border border-white/10 bg-[rgba(40,49,66,0.6)] text-white shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition hover:bg-[rgba(40,49,66,0.78)]"
+					@click="toggleViewerMoreMenu"
+				>
+					<el-icon :size="24"><MoreFilled /></el-icon>
+				</button>
+
+				<transition name="viewer-image-adjust-fade">
+					<div
+						v-if="isViewerMoreMenuOpen"
+						class="absolute top-[56px] right-0 z-30 flex min-w-[64px] flex-col gap-2 rounded-[18px] border border-white/10 bg-[rgba(40,49,66,0.92)] px-2 py-3 shadow-[0_12px_28px_rgba(15,23,42,0.38)]"
+					>
+						<button
+							type="button"
+							class="flex h-10 w-10 items-center justify-center self-end rounded-[14px] transition"
+							:class="isImageAdjustOpen ? 'bg-sky-500 text-white' : 'bg-white/8 text-slate-200 hover:bg-white/14'"
+							@click="toggleImageAdjustPanel"
+						>
+							<el-icon :size="24"><Sunny /></el-icon>
+						</button>
+					</div>
+				</transition>
+			</div>
+		</div>
+
+		<div
+			v-if="slideInfo.panel.isOpen.value || slideInfo.panel.isClosing.value"
+			class="animatedsliceNews-div fixed z-30 overflow-hidden whitespace-nowrap"
+			:class="{ collapsed1: slideInfo.panel.isClosing.value, expanded1: !slideInfo.panel.isClosing.value }"
+			:style="{
+				top: `${slideInfo.panel.position.value.y}px`,
+				left: `${slideInfo.panel.position.value.x}px`,
+			}"
+		>
+			<ViewerSlideInfo
+				:image-items="slideInfo.content.imageItems.value"
+				:text-items="slideInfo.content.textItems.value"
+				:active-image="slideInfo.content.activeImage.value"
+				:loading="slideInfo.content.loading.value"
+				:error="slideInfo.content.error.value"
+				@close="slideInfo.actions.close"
+				@retry="slideInfo.actions.retry"
+				@prev-image="slideInfo.actions.prevImage"
+				@next-image="slideInfo.actions.nextImage"
+				@drag-start="slideInfo.actions.startDragging"
+			/>
+		</div>
+
 		<div class="absolute bottom-4 left-24 z-20">
 			<button
 				type="button"
@@ -55,11 +139,15 @@
 			</button>
 		</div>
 
-		<ViewerImageAdjust
-			:model-value="wsiStore.tileParams"
-			:default-params="DEFAULT_TILE_PARAMS"
-			@apply="applyImageAdjust"
-		/>
+		<div class="absolute top-[72px] right-4 z-30">
+			<ViewerImageAdjust
+				:model-value="wsiStore.tileParams"
+				:default-params="DEFAULT_TILE_PARAMS"
+				:visible="isImageAdjustOpen"
+				@close="closeImageAdjustPanel"
+				@apply="applyImageAdjust"
+			/>
+		</div>
 
 		<ViewerZoomRuler
 			:current-magnification-label="currentMagnificationLabel"
@@ -76,9 +164,9 @@
 
 <script setup lang="ts" name="Home">
 	import OpenSeadragon, { type Viewer, clearTileCache } from '@/utils/openseadragon';
-	import { VideoPause, VideoPlay } from '@element-plus/icons-vue';
+	import { MoreFilled, Sunny, VideoPause, VideoPlay } from '@element-plus/icons-vue';
 	import { ElMessage } from 'element-plus';
-	import { onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
+	import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
 	import {
 		OSD_DEFAULT_OPTIONS,
 		OSD_IMAGE_LOADER_LIMIT,
@@ -88,12 +176,14 @@
 	} from '@/config/openseadragon';
 	import { getDziMetadata } from '@/api/modules/wsi';
 	import ViewerImageAdjust from '@/components/ViewerImageAdjust/index.vue';
+	import ViewerSlideInfo from '@/components/ViewerSlideInfo/index.vue';
 	import { DEFAULT_TILE_PARAMS, type TileParams, useWsiStore } from '@/store/modules/wsi';
 	import { storeToRefs } from 'pinia';
 	import ViewerZoomRuler from '@/components/ViewerZoomRuler/index.vue';
 	import { useViewerMagnification } from '@/composables/useViewerMagnification';
 	import { useViewerShortcuts } from '@/composables/useViewerShortcuts';
 	import { useViewerNavigator } from '@/composables/useViewerNavigator';
+	import { useViewerSlideInfo } from '@/composables/useViewerSlideInfo';
 	import { buildWsiTileSource, parseDziMetadata, type DziMetadata } from '@/utils/wsiTileSource';
 
 	type AutoPlayDirection = import('@/composables/useViewerShortcuts').ViewerShortcutDirection;
@@ -152,6 +242,40 @@
 		handleViewportResize: handleNavigatorResize,
 		destroyNavigatorEnhancements,
 	} = useViewerNavigator(viewer);
+	const { slideId, dziParams } = wsiStoreRefs;
+	const slideInfo = useViewerSlideInfo({
+		slideId,
+		cname: computed(() => dziParams.value.cname),
+		temporarySliceId: '01KM1TV95FWK723F5C6F76782N',
+	});
+	const isViewerMoreMenuOpen = ref(false);
+	const isImageAdjustOpen = ref(false);
+
+	function handleSlideInfoToggle() {
+		isViewerMoreMenuOpen.value = false;
+		void slideInfo.actions.toggle();
+	}
+
+	function toggleViewerMoreMenu() {
+		isViewerMoreMenuOpen.value = !isViewerMoreMenuOpen.value;
+	}
+
+	function toggleImageAdjustPanel() {
+		isImageAdjustOpen.value = !isImageAdjustOpen.value;
+		isViewerMoreMenuOpen.value = false;
+	}
+
+	function closeImageAdjustPanel() {
+		isImageAdjustOpen.value = false;
+		isViewerMoreMenuOpen.value = false;
+	}
+
+	function handleWindowClick(event: MouseEvent) {
+		const target = event.target as HTMLElement | null;
+		if (!target?.closest('.viewer-toolbar-root')) {
+			isViewerMoreMenuOpen.value = false;
+		}
+	}
 
 	function handleViewerOpened() {
 		handleViewerOpen();
@@ -568,6 +692,7 @@
 	});
 
 	onMounted(async () => {
+		window.addEventListener('click', handleWindowClick);
 		if (!viewerRef.value) {
 			console.error('[OSD] 查看器容器元素未找到，无法初始化');
 			return;
@@ -608,6 +733,7 @@
 
 	onBeforeUnmount(() => {
 		stopAutoPlay();
+		window.removeEventListener('click', handleWindowClick);
 		window.removeEventListener('resize', handleWindowResize);
 		if (adjustDebounceTimer.value != null) {
 			window.clearTimeout(adjustDebounceTimer.value);
@@ -619,3 +745,39 @@
 		clearTileCache();
 	});
 </script>
+
+<style scoped>
+	.animatedsliceNews-div {
+		width: 300px;
+		display: flex;
+		height: 346px;
+	}
+
+	.expanded1 {
+		animation: expand1 0.5s forwards;
+	}
+
+	.collapsed1 {
+		animation: collapse1 0.5s forwards;
+	}
+
+	@keyframes expand1 {
+		from {
+			height: 0;
+		}
+
+		to {
+			height: 346px;
+		}
+	}
+
+	@keyframes collapse1 {
+		from {
+			height: 346px;
+		}
+
+		to {
+			height: 0;
+		}
+	}
+</style>

@@ -8,9 +8,9 @@
  * @description 请求响应状态码
  */
 export enum ResultEnum {
-	SUCCESS = 200,
-	ERROR = 500,
-	OVERDUE = 104,
+	SUCCESS = '0',
+	ERROR = '1',
+	OVERDUE = '104',
 	TIMEOUT = 500000,
 	TYPE = 'success',
 }
