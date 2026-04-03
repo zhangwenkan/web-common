@@ -26,6 +26,10 @@ function getPositiveInt(value: unknown) {
 	return Number.isInteger(parsed) && parsed > 0 ? parsed : 0;
 }
 
+function formatSliceNumber(current: number, total: number) {
+	return `${current} / ${total}`;
+}
+
 function buildSliceNumberText(data: Record<string, unknown>) {
 	const current =
 		getPositiveInt(data.currentIndex) ||
@@ -40,7 +44,7 @@ function buildSliceNumberText(data: Record<string, unknown>) {
 	if (!current || !total) {
 		return '';
 	}
-	return ` ｜ ${current}/${total}`;
+	return ` ｜ ${formatSliceNumber(current, total)}`;
 }
 
 function buildButtonText(data: Record<string, unknown>, fallbackTitle: string) {
@@ -76,6 +80,23 @@ function getButtonBadgeStyle(data: Record<string, unknown>) {
 	};
 }
 
+function hasSliceNumberSuffix(text: string) {
+	return /\d+\s*\/\s*\d+/.test(text);
+}
+
+function buildSummaryTitle(title: string, currentIndex?: number, totalCount?: number) {
+	if (!title) {
+		return '切片信息';
+	}
+	if (hasSliceNumberSuffix(title)) {
+		return title;
+	}
+	if (!currentIndex || !totalCount) {
+		return title;
+	}
+	return `${title} ｜ ${formatSliceNumber(currentIndex, totalCount)}`;
+}
+
 export interface ViewerSlideInfoTextItem {
 	type: 'text';
 	label: string;
@@ -93,6 +114,8 @@ interface SlideInfoPanelPosition {
 interface UseViewerSlideInfoOptions {
 	slideId: Ref<string>;
 	cname: Ref<string>;
+	currentIndex?: Ref<number>;
+	totalCount?: Ref<number>;
 	panelWidth?: number;
 	topOffset?: number;
 	rightOffset?: number;
@@ -299,8 +322,11 @@ export function useViewerSlideInfo(options: UseViewerSlideInfoOptions) {
 	const imageItems = computed(() => items.value.filter((item): item is ViewerSlideInfoImageItem => item.type === 'image'));
 	const textItems = computed(() => items.value.filter((item): item is ViewerSlideInfoTextItem => item.type === 'text'));
 	const requestSliceId = computed(() => options.temporarySliceId || options.slideId.value);
-	const summaryTitle = computed(() => buttonText.value || title.value || '切片信息');
+	const summaryTitle = computed(() =>
+		buildSummaryTitle(buttonText.value || title.value || '切片信息', options.currentIndex?.value, options.totalCount?.value)
+	);
 	const summaryBadgeText = computed(() => buttonBadgeText.value);
+
 	const summaryBadgeColor = computed(() => buttonBadgeColor.value);
 	const summaryBadgeBackgroundColor = computed(() => buttonBadgeBackgroundColor.value);
 	const activeImage = computed(() => {
@@ -360,7 +386,7 @@ export function useViewerSlideInfo(options: UseViewerSlideInfoOptions) {
 
 	async function fetchPanelData(force = false) {
 		if (!requestSliceId.value) {
-			error.value = '缺少切片 ID';
+			error.value = '';
 			items.value = [];
 			title.value = '切片信息';
 			buttonText.value = '切片信息';

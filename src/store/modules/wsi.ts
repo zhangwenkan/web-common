@@ -35,8 +35,10 @@ export const DEFAULT_TILE_PARAMS: TileParams = {
 };
 
 interface WsiState {
-	// 当前切片文件 ID
+	// 当前切片 ID（用于切片信息等接口）
 	slideId: string;
+	// 当前文件 ID（用于 DZI 等文件级接口）
+	fileId: string;
 	// DZI 元数据接口参数
 	dziParams: {
 		cname: string;
@@ -55,7 +57,8 @@ interface WsiState {
 
 export const useWsiStore = defineStore('wsi', {
 	state: (): WsiState => ({
-		slideId: '01KMCRDD4RG9E6JMA6R4X0SCXJ1',
+		slideId: '',
+		fileId: '',
 		dziParams: {
 			cname: 'AI',
 		},
@@ -79,10 +82,17 @@ export const useWsiStore = defineStore('wsi', {
 
 	actions: {
 		/**
-		 * 设置切片文件 ID
+		 * 设置切片 ID
 		 */
 		setSlideId(slideId: string) {
 			this.slideId = slideId;
+		},
+
+		/**
+		 * 设置文件 ID
+		 */
+		setFileId(fileId: string) {
+			this.fileId = fileId;
 		},
 
 		/**

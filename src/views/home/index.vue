@@ -2,14 +2,55 @@
 	<div class="relative h-screen w-full bg-white">
 		<div ref="viewerRef" class="h-full w-full"></div>
 
+		<div class="fixed top-1/2 left-4 z-20 -translate-y-1/2">
+			<button
+				type="button"
+				class="flex h-[46px] w-[46px] items-center justify-center rounded-full border border-white/10 bg-[rgba(40,49,66,0.72)] text-white shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition hover:bg-[rgba(40,49,66,0.88)]"
+				title="切片列表"
+				@click="toggleSlideListPanel"
+			>
+				☰
+			</button>
+		</div>
+
+		<transition name="viewer-image-adjust-fade">
+			<div
+				v-if="isSlideListOpen"
+				class="fixed z-30"
+				:style="{
+					top: `${slideList.panel.position.value.y}px`,
+					left: `${slideList.panel.position.value.x}px`,
+				}"
+			>
+				<ViewerSlideList
+					:items="slideList.list.items.value"
+					:selected-slice-id="wsiStore.slideId"
+					:loading="slideList.list.loading.value"
+					:error="slideList.list.error.value"
+					:current="slideList.list.current.value"
+					:total="slideList.list.total.value"
+					:has-prev="slideList.list.hasPrev.value"
+					:has-next="slideList.list.hasNext.value"
+					@retry="slideList.actions.retry"
+					@select="handleSelectSlide"
+					@prev="handlePrevSlide"
+					@next="handleNextSlide"
+					@close="closeSlideListPanel"
+					@drag-start="slideList.actions.startDragging"
+					@panel-change="slideList.actions.setPanelElement"
+					@container-change="slideList.actions.setListContainer"
+				/>
+			</div>
+		</transition>
+
 		<div class="viewer-toolbar-root absolute top-4 right-4 z-20 flex items-start gap-4">
 			<transition name="viewer-image-adjust-fade">
 				<button
-					v-if="slideInfo.panel.hasMoved.value"
+					v-if="shouldShowResetOverlayButton"
 					type="button"
 					class="mt-[14px] mr-[14px] flex h-8 w-8 items-center justify-center rounded-full bg-[rgba(40,49,66,0.3)] text-white shadow-[0_8px_20px_rgba(15,23,42,0.25)] transition hover:bg-[rgba(40,49,66,0.8)]"
 					title="复位弹窗位置"
-					@click="slideInfo.actions.resetPosition"
+					@click="resetViewerOverlayPositions"
 				>
 					↺
 				</button>
@@ -36,7 +77,7 @@
 				</span>
 			</button>
 
-			<div class="relative">
+			<!-- <div class="relative">
 				<button
 					type="button"
 					class="flex h-[46px] w-[46px] items-center justify-center rounded-full border border-white/10 bg-[rgba(40,49,66,0.6)] text-white shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition hover:bg-[rgba(40,49,66,0.78)]"
@@ -60,7 +101,7 @@
 						</button>
 					</div>
 				</transition>
-			</div>
+			</div> -->
 		</div>
 
 		<div
@@ -86,7 +127,7 @@
 			/>
 		</div>
 
-		<div class="absolute bottom-4 left-24 z-20">
+		<!-- <div class="absolute bottom-4 left-24 z-20">
 			<button
 				type="button"
 				class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-500/90 text-white shadow-[0_4px_12px_rgba(0,0,0,0.16)] transition hover:scale-105 hover:bg-slate-500"
@@ -98,7 +139,7 @@
 					<VideoPlay v-else />
 				</el-icon>
 			</button>
-		</div>
+		</div> -->
 
 		<div v-if="isAutoPlaying" class="absolute right-4 bottom-4 z-20 h-28 w-28">
 			<button
@@ -164,9 +205,8 @@
 
 <script setup lang="ts" name="Home">
 	import OpenSeadragon, { type Viewer, clearTileCache } from '@/utils/openseadragon';
-	import { MoreFilled, Sunny, VideoPause, VideoPlay } from '@element-plus/icons-vue';
 	import { ElMessage } from 'element-plus';
-	import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef } from 'vue';
+	import { computed, onBeforeUnmount, onMounted, ref, useTemplateRef, watch } from 'vue';
 	import {
 		OSD_DEFAULT_OPTIONS,
 		OSD_IMAGE_LOADER_LIMIT,
@@ -177,6 +217,7 @@
 	import { getDziMetadata } from '@/api/modules/wsi';
 	import ViewerImageAdjust from '@/components/ViewerImageAdjust/index.vue';
 	import ViewerSlideInfo from '@/components/ViewerSlideInfo/index.vue';
+	import ViewerSlideList from '@/components/ViewerSlideList/index.vue';
 	import { DEFAULT_TILE_PARAMS, type TileParams, useWsiStore } from '@/store/modules/wsi';
 	import { storeToRefs } from 'pinia';
 	import ViewerZoomRuler from '@/components/ViewerZoomRuler/index.vue';
@@ -184,11 +225,11 @@
 	import { useViewerShortcuts } from '@/composables/useViewerShortcuts';
 	import { useViewerNavigator } from '@/composables/useViewerNavigator';
 	import { useViewerSlideInfo } from '@/composables/useViewerSlideInfo';
+	import { useViewerSlideList } from '@/composables/useViewerSlideList';
 	import { buildWsiTileSource, parseDziMetadata, type DziMetadata } from '@/utils/wsiTileSource';
 
 	type AutoPlayDirection = import('@/composables/useViewerShortcuts').ViewerShortcutDirection;
 
-	const DEMO_DZI_URL = 'https://openseadragon.github.io/example-images/highsmith/highsmith.dzi';
 	const viewerRef = useTemplateRef('viewerRef');
 	const viewer = ref<Viewer | null>(null);
 	const dziMetadata = ref<DziMetadata | null>(null);
@@ -206,15 +247,6 @@
 	const autoPlayDirection = ref<AutoPlayDirection>('right');
 	const wsiStore = useWsiStore();
 	const wsiStoreRefs = storeToRefs(wsiStore);
-	const API_DZI_URL = wsiStore.slideId
-		? `/wsi/api/dzi/${wsiStore.slideId}.dzi?cname=${encodeURIComponent(wsiStore.dziParams.cname)}`
-		: null;
-	const DZI_SOURCES = {
-		api: API_DZI_URL,
-		demo: DEMO_DZI_URL,
-	} as const;
-	const ACTIVE_DZI_SOURCE: keyof typeof DZI_SOURCES = 'api';
-	const ACTIVE_DZI_URL = DZI_SOURCES[ACTIVE_DZI_SOURCE] ?? DZI_SOURCES.demo;
 	const AUTO_PLAY_SPEED_LEVEL = 0.5;
 	const AUTO_PLAY_VIEWPORT_RATIO_PER_SECOND = 1 / AUTO_PLAY_SPEED_LEVEL / 3;
 	const AUTO_PLAY_NUDGE_RATIO = 2;
@@ -242,38 +274,53 @@
 		handleViewportResize: handleNavigatorResize,
 		destroyNavigatorEnhancements,
 	} = useViewerNavigator(viewer);
-	const { slideId, dziParams } = wsiStoreRefs;
+	const { slideId, fileId, dziParams } = wsiStoreRefs;
+	const viewerCname = computed(() => dziParams.value.cname);
+	const slideList = useViewerSlideList({
+		slideId,
+		fileId,
+		cname: viewerCname,
+		onResolveSelectedItem: (resolvedItem) => {
+			wsiStore.setFileId(resolvedItem.fileId);
+			wsiStore.setSlideId(resolvedItem.sliceId);
+		},
+	});
 	const slideInfo = useViewerSlideInfo({
 		slideId,
-		cname: computed(() => dziParams.value.cname),
-		temporarySliceId: '01KM1TV95FWK723F5C6F76782N',
+		cname: viewerCname,
+		currentIndex: slideList.list.current,
+		totalCount: slideList.list.total,
 	});
-	const isViewerMoreMenuOpen = ref(false);
+
 	const isImageAdjustOpen = ref(false);
+	const isSlideListOpen = ref(false);
+	const shouldShowResetOverlayButton = computed(() => slideInfo.panel.hasMoved.value || slideList.panel.hasMoved.value);
+
+	function resetViewerOverlayPositions() {
+		slideInfo.actions.resetPosition();
+		slideList.actions.resetPosition();
+	}
+
+	function toggleSlideListPanel() {
+		isSlideListOpen.value = !isSlideListOpen.value;
+	}
+
+	function closeSlideListPanel() {
+		isSlideListOpen.value = false;
+	}
 
 	function handleSlideInfoToggle() {
-		isViewerMoreMenuOpen.value = false;
 		void slideInfo.actions.toggle();
-	}
-
-	function toggleViewerMoreMenu() {
-		isViewerMoreMenuOpen.value = !isViewerMoreMenuOpen.value;
-	}
-
-	function toggleImageAdjustPanel() {
-		isImageAdjustOpen.value = !isImageAdjustOpen.value;
-		isViewerMoreMenuOpen.value = false;
 	}
 
 	function closeImageAdjustPanel() {
 		isImageAdjustOpen.value = false;
-		isViewerMoreMenuOpen.value = false;
 	}
 
 	function handleWindowClick(event: MouseEvent) {
 		const target = event.target as HTMLElement | null;
 		if (!target?.closest('.viewer-toolbar-root')) {
-			isViewerMoreMenuOpen.value = false;
+			return;
 		}
 	}
 
@@ -285,6 +332,50 @@
 	function handleWindowResize() {
 		handleViewportResize();
 		handleNavigatorResize();
+	}
+
+	async function switchSlide(item: { sliceId: string; fileId: string }) {
+		if (!item.sliceId || !item.fileId) {
+			return;
+		}
+		if (item.sliceId === wsiStore.slideId && item.fileId === wsiStore.fileId) {
+			return;
+		}
+		if (isAutoPlaying.value) {
+			stopAutoPlay();
+		}
+		wsiStore.setFileId(item.fileId);
+		wsiStore.setSlideId(item.sliceId);
+		try {
+			await loadDziMetadata();
+			if (viewer.value) {
+				viewer.value.open(buildViewerTileSource());
+			}
+		} catch (error) {
+			console.error('[OSD] 切换切片时加载 DZI 元数据失败：', error);
+			ElMessage.error('切换切片失败');
+		}
+	}
+
+	function handleSelectSlide(sliceId: string) {
+		const targetItem = slideList.list.items.value.find((item) => item.sliceId === sliceId);
+		if (targetItem) {
+			void switchSlide(targetItem);
+		}
+	}
+
+	function handlePrevSlide() {
+		const previousItem = slideList.list.items.value[slideList.list.selectedIndex.value - 1];
+		if (previousItem) {
+			void switchSlide(previousItem);
+		}
+	}
+
+	function handleNextSlide() {
+		const nextItem = slideList.list.items.value[slideList.list.selectedIndex.value + 1];
+		if (nextItem) {
+			void switchSlide(nextItem);
+		}
 	}
 
 	function getAutoPlayVelocity(direction: AutoPlayDirection) {
@@ -530,19 +621,19 @@
 	}
 
 	function buildViewerTileSource() {
-		if (!wsiStore.slideId || !dziMetadata.value) {
-			return ACTIVE_DZI_URL;
+		if (!wsiStore.fileId || !dziMetadata.value) {
+			return null;
 		}
 
-		return buildWsiTileSource(wsiStore.slideId, dziMetadata.value, wsiStore.dziParams.cname, wsiStore.tileParams);
+		return buildWsiTileSource(wsiStore.fileId, dziMetadata.value, wsiStore.dziParams.cname, wsiStore.tileParams);
 	}
 
 	async function loadDziMetadata() {
-		if (!wsiStore.slideId) {
+		if (!wsiStore.fileId) {
 			return;
 		}
 
-		const response = await getDziMetadata(wsiStore.slideId, {
+		const response = await getDziMetadata(wsiStore.fileId, {
 			cname: wsiStore.dziParams.cname,
 		});
 		const dziText = typeof response === 'string' ? response : String((response as { data?: unknown })?.data ?? '');
@@ -563,7 +654,7 @@
 		isApplyingImageAdjust.value = true;
 		wsiStore.setTileParams(tileParams);
 
-		if (!viewer.value || !dziMetadata.value || !wsiStore.slideId) {
+		if (!viewer.value || !dziMetadata.value || !wsiStore.fileId) {
 			isApplyingImageAdjust.value = false;
 			return;
 		}
@@ -730,6 +821,24 @@
 
 		window.addEventListener('resize', handleWindowResize);
 	});
+
+	watch(
+		() => [wsiStore.fileId, wsiStore.slideId],
+		([fileId, sliceId], [previousFileId, previousSliceId]) => {
+			void slideList.actions.scrollSelectedIntoView();
+			if (!fileId || !sliceId || !viewer.value) {
+				return;
+			}
+			if ((fileId === previousFileId && sliceId === previousSliceId) || previousFileId) {
+				return;
+			}
+			void loadDziMetadata().then(() => {
+				if (viewer.value) {
+					viewer.value.open(buildViewerTileSource());
+				}
+			});
+		}
+	);
 
 	onBeforeUnmount(() => {
 		stopAutoPlay();
