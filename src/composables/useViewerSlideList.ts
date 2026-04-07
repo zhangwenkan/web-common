@@ -18,6 +18,8 @@ export interface ViewerSlideListItem {
 	badgeColor: string;
 	badgeBackgroundColor: string;
 	analResCode: string;
+	scanMagnification: number;
+	physicalResolution: number;
 }
 
 interface SlideListPanelPosition {
@@ -57,6 +59,21 @@ function getRecord(value: unknown): Record<string, unknown> | null {
 
 function getArray(value: unknown) {
 	return Array.isArray(value) ? value : [];
+}
+
+function normalizeNumber(value: unknown) {
+	if (typeof value === 'number' && Number.isFinite(value)) {
+		return value;
+	}
+	if (typeof value === 'string') {
+		const normalized = value.trim().replace(/[^\d.+-]/g, '');
+		if (!normalized) {
+			return 0;
+		}
+		const parsed = Number.parseFloat(normalized);
+		return Number.isFinite(parsed) ? parsed : 0;
+	}
+	return 0;
 }
 
 function pickFirstString(record: Record<string, unknown>, keys: string[]) {
@@ -157,6 +174,28 @@ function extractThumbnail(record: Record<string, unknown>) {
 	return '';
 }
 
+function extractNumericAttributeValue(record: Record<string, unknown>, labels: string[]) {
+	for (const label of labels) {
+		if (label in record) {
+			const directValue = normalizeNumber(record[label]);
+			if (directValue > 0) {
+				return directValue;
+			}
+		}
+	}
+	for (const itemRecord of getAttributeRecords(record)) {
+		const label = pickFirstString(itemRecord, ['label', 'name', 'title']);
+		if (!labels.includes(label)) {
+			continue;
+		}
+		const value = normalizeNumber(itemRecord.value ?? itemRecord.text ?? itemRecord.content);
+		if (value > 0) {
+			return value;
+		}
+	}
+	return 0;
+}
+
 function extractMetaLines(record: Record<string, unknown>, title: string, subtitle: string, badgeText: string) {
 	const lines: ViewerSlideListMetaLine[] = [];
 	for (const itemRecord of getAttributeRecords(record)) {
@@ -212,6 +251,16 @@ function normalizeListItem(rawItem: unknown): ViewerSlideListItem | null {
 		pickFirstString(record, ['adoptedPart', 'partName', 'subtitle', 'subTitle']) ||
 		findAttributeValue(record, ['切片状态', '状态'], 'text');
 	const { badgeText, badgeColor, badgeBackgroundColor } = buildBadgeStyle(record);
+	const scanMagnification = extractNumericAttributeValue(record, ['rate', '倍率', '扫描倍率', 'scanMagnification', 'objective']);
+	const physicalResolution = extractNumericAttributeValue(record, [
+		'resolution',
+		'分辨率',
+		'校准值',
+		'calibration',
+		'mpp',
+		'umPerPixel',
+		'μm/px',
+	]);
 	return {
 		sliceId,
 		fileId,
@@ -223,6 +272,8 @@ function normalizeListItem(rawItem: unknown): ViewerSlideListItem | null {
 		badgeColor,
 		badgeBackgroundColor,
 		analResCode: pickFirstString(record, ['analResCode', 'analysisResult', 'resultCode']),
+		scanMagnification,
+		physicalResolution,
 	};
 }
 
@@ -248,7 +299,7 @@ function clamp(value: number, min: number, max: number) {
 export function useViewerSlideList(options: UseViewerSlideListOptions) {
 	const panelWidth = options.panelWidth ?? 320;
 	const panelHeight = options.panelHeight ?? 540;
-	const leftOffset = options.leftOffset ?? 16;
+	const leftOffset = options.leftOffset ?? 28;
 	const topOffset = options.topOffset ?? 16;
 	const triggerWidth = options.triggerWidth ?? 46;
 	const triggerGap = options.triggerGap ?? 12;

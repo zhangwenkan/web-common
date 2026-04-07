@@ -47,6 +47,8 @@ interface WsiState {
 	tileParams: TileParams;
 	// 扫描倍率
 	scanMagnification: number;
+	// 物理分辨率（μm/px）
+	physicalResolution: number;
 	// 当前显示倍率
 	currentMagnification: number;
 	// 最大允许倍率
@@ -64,6 +66,7 @@ export const useWsiStore = defineStore('wsi', {
 		},
 		tileParams: { ...DEFAULT_TILE_PARAMS },
 		scanMagnification: DEFAULT_SCAN_MAGNIFICATION,
+		physicalResolution: 0,
 		currentMagnification: 1,
 		maxMagnification: DEFAULT_SCAN_MAGNIFICATION * MAX_MAGNIFICATION_RATIO,
 		fitMagnification: 1,
@@ -122,6 +125,13 @@ export const useWsiStore = defineStore('wsi', {
 		setScanMagnification(magnification: number) {
 			this.scanMagnification = magnification;
 			this.maxMagnification = magnification * MAX_MAGNIFICATION_RATIO;
+		},
+
+		/**
+		 * 设置物理分辨率（μm/px）
+		 */
+		setPhysicalResolution(resolution: number) {
+			this.physicalResolution = resolution > 0 ? resolution : 0;
 		},
 
 		/**

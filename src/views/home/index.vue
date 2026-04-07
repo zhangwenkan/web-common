@@ -5,7 +5,7 @@
 		<div class="fixed top-1/2 left-4 z-20 -translate-y-1/2">
 			<button
 				type="button"
-				class="flex h-[46px] w-[46px] items-center justify-center rounded-full border border-white/10 bg-[rgba(40,49,66,0.72)] text-white shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition hover:bg-[rgba(40,49,66,0.88)]"
+				class="flex h-[46px] w-[46px] items-center justify-center rounded-full border border-white/10 cursor-pointer bg-[rgba(40,49,66,0.72)] text-white shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition hover:bg-[rgba(40,49,66,0.88)]"
 				title="切片列表"
 				@click="toggleSlideListPanel"
 			>
@@ -58,7 +58,7 @@
 
 			<button
 				type="button"
-				class="flex h-[46px] max-w-[420px] items-center gap-3 rounded-full bg-[rgba(40,49,66,0.6)] px-[18px] text-left text-white shadow-[0_8px_20px_rgba(15,23,42,0.35)] backdrop-blur transition hover:bg-[rgba(40,49,66,0.78)]"
+				class="flex h-[46px] max-w-[420px] items-center gap-3 rounded-full cursor-pointer bg-[rgba(40,49,66,0.6)] px-[18px] text-left text-white shadow-[0_8px_20px_rgba(15,23,42,0.35)] backdrop-blur transition hover:bg-[rgba(40,49,66,0.78)]"
 				title="切片信息(I)"
 				@click="handleSlideInfoToggle"
 			>
@@ -76,32 +76,6 @@
 					{{ slideInfo.summary.badgeText.value }}
 				</span>
 			</button>
-
-			<!-- <div class="relative">
-				<button
-					type="button"
-					class="flex h-[46px] w-[46px] items-center justify-center rounded-full border border-white/10 bg-[rgba(40,49,66,0.6)] text-white shadow-[0_8px_20px_rgba(15,23,42,0.35)] transition hover:bg-[rgba(40,49,66,0.78)]"
-					@click="toggleViewerMoreMenu"
-				>
-					<el-icon :size="24"><MoreFilled /></el-icon>
-				</button>
-
-				<transition name="viewer-image-adjust-fade">
-					<div
-						v-if="isViewerMoreMenuOpen"
-						class="absolute top-[56px] right-0 z-30 flex min-w-[64px] flex-col gap-2 rounded-[18px] border border-white/10 bg-[rgba(40,49,66,0.92)] px-2 py-3 shadow-[0_12px_28px_rgba(15,23,42,0.38)]"
-					>
-						<button
-							type="button"
-							class="flex h-10 w-10 items-center justify-center self-end rounded-[14px] transition"
-							:class="isImageAdjustOpen ? 'bg-sky-500 text-white' : 'bg-white/8 text-slate-200 hover:bg-white/14'"
-							@click="toggleImageAdjustPanel"
-						>
-							<el-icon :size="24"><Sunny /></el-icon>
-						</button>
-					</div>
-				</transition>
-			</div> -->
 		</div>
 
 		<div
@@ -126,20 +100,6 @@
 				@drag-start="slideInfo.actions.startDragging"
 			/>
 		</div>
-
-		<!-- <div class="absolute bottom-4 left-24 z-20">
-			<button
-				type="button"
-				class="flex h-11 w-11 items-center justify-center rounded-full bg-slate-500/90 text-white shadow-[0_4px_12px_rgba(0,0,0,0.16)] transition hover:scale-105 hover:bg-slate-500"
-				:title="isAutoPlaying ? '暂停播放 (P)' : '开始播放 (P)'"
-				@click="toggleAutoPlay"
-			>
-				<el-icon :size="22">
-					<VideoPause v-if="isAutoPlaying" />
-					<VideoPlay v-else />
-				</el-icon>
-			</button>
-		</div> -->
 
 		<div v-if="isAutoPlaying" class="absolute right-4 bottom-4 z-20 h-28 w-28">
 			<button
@@ -190,16 +150,24 @@
 			/>
 		</div>
 
-		<ViewerZoomRuler
-			:current-magnification-label="currentMagnificationLabel"
-			:is-warning="isWarning"
-			:is-fit-active="isFitActive"
-			:preset-magnifications="OSD_MAGNIFICATION_PRESETS"
-			:is-preset-disabled="isPresetDisabled"
-			:is-preset-active="isPresetActive"
-			@select-magnification="zoomToMagnification"
-			@fit-to-viewport="fitToViewport"
-		/>
+		<div class="absolute bottom-4 left-4 z-20 flex items-end gap-3">
+			<ViewerZoomRuler
+				:current-magnification-label="currentMagnificationLabel"
+				:is-warning="isWarning"
+				:is-fit-active="isFitActive"
+				:preset-magnifications="OSD_MAGNIFICATION_PRESETS"
+				:is-preset-disabled="isPresetDisabled"
+				:is-preset-active="isPresetActive"
+				@select-magnification="zoomToMagnification"
+				@fit-to-viewport="fitToViewport"
+			/>
+			<!-- <ViewerScaleBar
+				:visible="isScaleBarVisible"
+				:width-px="scaleBarWidthPx"
+				:label="scaleBarLabel"
+				:unit="scaleBarUnit"
+			/> -->
+		</div>
 	</div>
 </template>
 
@@ -216,14 +184,16 @@
 	} from '@/config/openseadragon';
 	import { getDziMetadata } from '@/api/modules/wsi';
 	import ViewerImageAdjust from '@/components/ViewerImageAdjust/index.vue';
+	// import ViewerScaleBar from '@/components/ViewerScaleBar/index.vue';
 	import ViewerSlideInfo from '@/components/ViewerSlideInfo/index.vue';
 	import ViewerSlideList from '@/components/ViewerSlideList/index.vue';
+	import ViewerZoomRuler from '@/components/ViewerZoomRuler/index.vue';
 	import { DEFAULT_TILE_PARAMS, type TileParams, useWsiStore } from '@/store/modules/wsi';
 	import { storeToRefs } from 'pinia';
-	import ViewerZoomRuler from '@/components/ViewerZoomRuler/index.vue';
 	import { useViewerMagnification } from '@/composables/useViewerMagnification';
-	import { useViewerShortcuts } from '@/composables/useViewerShortcuts';
 	import { useViewerNavigator } from '@/composables/useViewerNavigator';
+	import { useViewerScaleBar } from '@/composables/useViewerScaleBar';
+	import { useViewerShortcuts } from '@/composables/useViewerShortcuts';
 	import { useViewerSlideInfo } from '@/composables/useViewerSlideInfo';
 	import { useViewerSlideList } from '@/composables/useViewerSlideList';
 	import { buildWsiTileSource, parseDziMetadata, type DziMetadata } from '@/utils/wsiTileSource';
@@ -270,6 +240,16 @@
 		isPresetActive,
 	} = useViewerMagnification(viewer, wsiStore, wsiStoreRefs);
 	const {
+		// widthPx: scaleBarWidthPx,
+		// displayText: scaleBarLabel,
+		// unit: scaleBarUnit,
+		// isVisible: isScaleBarVisible,
+		handleViewerOpen: handleScaleBarOpen,
+		handleViewerAnimation: handleScaleBarAnimation,
+		handleAnimationFinish: handleScaleBarAnimationFinish,
+		handleViewportResize: handleScaleBarResize,
+	} = useViewerScaleBar(viewer, wsiStore, wsiStoreRefs);
+	const {
 		handleViewerOpen: handleNavigatorOpen,
 		handleViewportResize: handleNavigatorResize,
 		destroyNavigatorEnhancements,
@@ -283,6 +263,15 @@
 		onResolveSelectedItem: (resolvedItem) => {
 			wsiStore.setFileId(resolvedItem.fileId);
 			wsiStore.setSlideId(resolvedItem.sliceId);
+			if (resolvedItem.scanMagnification > 0) {
+				wsiStore.setScanMagnification(resolvedItem.scanMagnification);
+			}
+			wsiStore.setPhysicalResolution(resolvedItem.physicalResolution);
+			if (viewer.value) {
+				window.requestAnimationFrame(() => {
+					handleScaleBarOpen();
+				});
+			}
 		},
 	});
 	const slideInfo = useViewerSlideInfo({
@@ -295,6 +284,26 @@
 	const isImageAdjustOpen = ref(false);
 	const isSlideListOpen = ref(false);
 	const shouldShowResetOverlayButton = computed(() => slideInfo.panel.hasMoved.value || slideList.panel.hasMoved.value);
+
+	watch(
+		() => slideList.list.selectedItem.value,
+		(selectedItem) => {
+			if (!selectedItem) {
+				wsiStore.setPhysicalResolution(0);
+				return;
+			}
+			if (selectedItem.scanMagnification > 0) {
+				wsiStore.setScanMagnification(selectedItem.scanMagnification);
+			}
+			wsiStore.setPhysicalResolution(selectedItem.physicalResolution);
+			if (viewer.value) {
+				window.requestAnimationFrame(() => {
+					handleScaleBarOpen();
+				});
+			}
+		},
+		{ immediate: true }
+	);
 
 	function resetViewerOverlayPositions() {
 		slideInfo.actions.resetPosition();
@@ -326,11 +335,13 @@
 
 	function handleViewerOpened() {
 		handleViewerOpen();
+		handleScaleBarOpen();
 		handleNavigatorOpen();
 	}
 
 	function handleWindowResize() {
 		handleViewportResize();
+		handleScaleBarResize();
 		handleNavigatorResize();
 	}
 
@@ -807,8 +818,10 @@
 		viewer.value.addHandler('open', handleViewerOpened);
 		viewer.value.addHandler('zoom', handleViewerZoom);
 		viewer.value.addHandler('animation', handleViewerAnimation);
+		viewer.value.addHandler('animation', handleScaleBarAnimation);
 		viewer.value.addHandler('canvas-scroll', handleCanvasScroll);
 		viewer.value.addHandler('animation-finish', handleAnimationFinish);
+		viewer.value.addHandler('animation-finish', handleScaleBarAnimationFinish);
 		viewer.value.addHandler('canvas-drag', stopAutoPlay);
 		viewer.value.addHandler('zoom', stopAutoPlay);
 		viewer.value.addHandler('open', stopAutoPlay);

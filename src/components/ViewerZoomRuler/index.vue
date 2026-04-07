@@ -1,6 +1,6 @@
 <template>
 	<div
-		class="absolute bottom-4 left-4 z-10 flex flex-col items-center gap-2 rounded-[20px] bg-slate-500/90 px-2 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.16)]"
+		class="flex flex-col items-center gap-2 rounded-[20px] bg-slate-500/90 px-2 py-3 shadow-[0_4px_12px_rgba(0,0,0,0.16)]"
 	>
 		<div class="flex min-w-11 justify-center rounded-full bg-white/10 px-2 py-1">
 			<span class="text-[11px] font-semibold" :class="isWarning ? 'text-red-400' : 'text-white'">
@@ -15,7 +15,7 @@
 				type="button"
 				:disabled="preset.value === 'fit' ? false : isPresetDisabled(preset.value)"
 				:title="preset.title"
-				class="relative z-10 flex h-8 w-8 items-center justify-center rounded-full text-[10px] cursor-pointer font-medium transition-all duration-300 ease-out"
+				class="relative z-10 flex h-8 w-8 cursor-pointer items-center justify-center rounded-full text-[10px] font-medium transition-all duration-300 ease-out"
 				:class="getPresetButtonClasses(preset.value)"
 				@click="handlePresetClick(preset.value)"
 			>
@@ -57,10 +57,6 @@
 		if (props.isPresetDisabled(preset)) {
 			return 'cursor-not-allowed bg-white/10 text-white/45';
 		}
-
-		// if (props.isPresetActive(preset)) {
-		// 	return 'scale-105 bg-white text-slate-600 shadow-sm';
-		// }
 
 		return 'bg-white/18 text-white hover:scale-105 hover:bg-white/28';
 	}
